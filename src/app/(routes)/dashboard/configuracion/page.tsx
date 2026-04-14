@@ -46,7 +46,7 @@ export default function ConfiguracionPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground mb-1.5 block">Nombre</label>
-                    <Input defaultValue="Maria Garcia" className="bg-muted/50" />
+                    <Input placeholder="Tu nombre" className="bg-muted/50" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground mb-1.5 block">Apellido</label>
@@ -57,7 +57,7 @@ export default function ConfiguracionPage() {
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input defaultValue="maria.garcia@email.com" className="pl-10 bg-muted/50" />
+                    <Input placeholder="tu@email.com" className="pl-10 bg-muted/50" />
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">

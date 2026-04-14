@@ -45,16 +45,17 @@ export function Sidebar() {
 
       {/* User Section */}
       <div className="px-4 py-4 border-b border-border">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
-            MG
+        <Link href="/dashboard/configuracion">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm shrink-0">
+              U
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">Mi cuenta</p>
+              <p className="text-xs text-muted-foreground truncate">Configurar perfil →</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Maria Garcia</p>
-            <p className="text-xs text-muted-foreground truncate">maria@email.com</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </div>
+        </Link>
       </div>
 
       {/* Navigation */}

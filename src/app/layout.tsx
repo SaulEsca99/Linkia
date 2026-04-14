@@ -24,6 +24,11 @@ export const metadata: Metadata = {
     "vacantes",
     "Linkia",
   ],
+  icons: {
+    icon: "/branding/linkia-icon.png",
+    apple: "/branding/linkia-icon.png",
+    shortcut: "/branding/linkia-icon.png",
+  },
 };
 
 export default function RootLayout({

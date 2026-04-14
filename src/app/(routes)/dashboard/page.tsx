@@ -45,7 +45,7 @@ export default function DashboardPage() {
         <div className="px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-foreground">Bienvenida, Maria</h1>
+              <h1 className="text-xl lg:text-2xl font-bold text-foreground">¡Bienvenido!</h1>
               <p className="text-sm text-muted-foreground mt-0.5">Tu copiloto de empleo está listo para ayudarte</p>
             </div>
             <div className="hidden md:flex items-center gap-3">
