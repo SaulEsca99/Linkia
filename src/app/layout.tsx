@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "JobAI — Tu Copiloto Inteligente para Encontrar Trabajo",
+  title: "Linkia — Tu Copiloto Inteligente para Encontrar Trabajo",
   description:
     "Plataforma impulsada por IA que analiza tu CV, encuentra vacantes compatibles en LATAM y genera versiones adaptadas para cada oferta.",
   keywords: [
@@ -22,8 +22,7 @@ export const metadata: Metadata = {
     "LATAM",
     "México",
     "vacantes",
-    "OCC",
-    "Indeed",
+    "Linkia",
   ],
 };
 

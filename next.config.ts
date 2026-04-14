@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* JobAI config */
+  /* Linkia config */
   serverExternalPackages: ["pdf-parse"],
 };
 
