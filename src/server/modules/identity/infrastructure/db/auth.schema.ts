@@ -15,8 +15,6 @@ export const user = pgTable("user", {
   onboardingCompleted: boolean("onboarding_completed").default(false).notNull(),
 
   role: text("role"),
-  isDonor: boolean("is_donor").default(false).notNull(),
-  isBeneficiary: boolean("is_beneficiary").default(false).notNull(),
 
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),

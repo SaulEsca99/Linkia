@@ -27,7 +27,7 @@ export function CTASection() {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>
-          <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8" asChild>
+          <Button size="lg" variant="outline" className="bg-white text-primary hover:bg-white/90 px-8" asChild>
             <Link href="#como-funciona">Ver cómo funciona</Link>
           </Button>
         </div>

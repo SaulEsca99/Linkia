@@ -3,6 +3,7 @@ import type { ParsedProfile } from "@server/modules/cv/infrastructure/db/cv.sche
 export type CvAnalysisResult = {
   success: true;
   profile: ParsedProfile;
+  latexContent?: string;
   rawText: string;
 } | {
   success: false;

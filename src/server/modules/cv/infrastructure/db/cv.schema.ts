@@ -26,6 +26,17 @@ export type ParsedProfile = {
   }[];
   languages: string[];
   certifications?: string[];
+  coachAnalysis: {
+    overallScore: number;
+    criticalIssues: string[];
+    bulletPointAudits: {
+      original: string;
+      rewritten: string;
+    }[];
+    atsKeywords: string[];
+    formattingIssues: string[];
+    priorityActions: string[];
+  };
 };
 
 /**
@@ -47,6 +58,8 @@ export const cvs = pgTable("cvs", {
   blobUrl: text("blob_url"),
 
   parsedProfile: jsonb("parsed_profile").$type<ParsedProfile>(),
+
+  latexContent: text("latex_content"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

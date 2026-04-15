@@ -1,0 +1,152 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{textcomp}
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=blue,
+    linkcolor=blue,
+    pdftitle={CV - Saúl Escamilla Lazcano},
+    pdfauthor={Saúl Escamilla Lazcano}
+}
+
+\titleformat{\section}{\centering\large\bfseries}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{12pt}{8pt}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlist{noitemsep, topsep=2pt, leftmargin=18pt}
+
+\begin{document}
+
+% ============ CONTACT INFORMATION ============
+\begin{center}
+    {\LARGE\bfseries Saúl Escamilla Lazcano}\\[6pt]
+    Mexico City, Mexico\\[2pt]
+    (+52) 55 6193 1661 \textbullet{} 
+    \href{mailto:saulescamillawm@gmail.com}{saulescamillawm@gmail.com} \textbullet{} 
+    \href{https://github.com/SaulEsca99}{github.com/SaulEsca99} \textbullet{} 
+    \href{https://linkedin.com/in/saúlel}{linkedin.com/in/saúlel}
+\end{center}
+
+\noindent
+\rule{\linewidth}{0.8pt}
+\vspace{6pt}
+
+% ============ PROFESSIONAL SUMMARY ============
+Artificial Intelligence Engineering student at ESCOM-IPN (graduating 2027), with demonstrated experience developing production-ready AI systems across Computer Vision, Natural Language Processing, and Full-Stack Web Development. Proven track record building end-to-end solutions from data processing to deployment, including healthcare platforms, real-time tracking systems, and NLP pipelines. Specialized in Python, TensorFlow, and modern web frameworks (TypeScript/React/Next.js). Passionate about applying cutting-edge AI techniques to solve real-world problems with measurable impact.
+
+\vspace{6pt}
+
+% ============ TECHNICAL SKILLS ============
+\section*{Technical Skills}
+
+\textbf{Programming Languages:} Python, TypeScript, JavaScript, Java, C, C++, SQL, HTML/CSS
+
+\textbf{AI/ML Frameworks:} TensorFlow, Keras, PyTorch, Scikit-learn, OpenCV, YOLO, NLTK, SpaCy, Transformers (BERT), Gensim
+
+\textbf{Web Development:} Next.js, React, TypeScript, Flask, FastAPI, Streamlit, Drizzle ORM, PostgreSQL, Tailwind CSS
+
+\textbf{Data Science \& NLP:} Pandas, NumPy, Matplotlib, Seaborn, TF-IDF, Word2Vec, GloVe, FastText, PCA, t-SNE, Sentiment Analysis
+
+\textbf{Tools \& DevOps:} Git/GitHub, Docker, Jupyter, VS Code, Agile/Scrum, Testing (pytest)
+
+\textbf{Computer Vision:} Object Detection (YOLO), Multi-Object Tracking (KCF, CSRT, MOSSE), Kalman Filtering, Image Processing
+
+\textbf{Soft Skills:} Technical Documentation, Problem-Solving, Team Collaboration, Code Review, Agile Methodologies
+
+\textbf{Languages:} Spanish (Native), \textbf{English (C1 - CEFR Certified)}
+
+\vspace{6pt}
+
+% ============ AI AND DEVELOPMENT PROJECTS ============
+\section*{Featured AI \& Development Projects}
+
+\textbf{DonaMed -- Healthcare Medication Donation Platform} \hfill \textit{Jan 2026}
+\begin{itemize}
+    \item Collaborated on full-stack healthcare platform connecting medication donors with recipients using Next.js 16, React 19, and TypeScript 5.
+    \item Implemented hexagonal architecture with 6 core modules: Identity, Inventory, Matchmaking, Governance, Coordination, and Resolution.
+    \item Built RESTful APIs with PostgreSQL database using Drizzle ORM for type-safe queries and Better Auth for authentication.
+    \item Developed admin dashboard with real-time metrics, user management, and request moderation using TanStack Query and Recharts.
+    \item Deployed to production on Vercel with Docker containerization for database services.
+    \item \textit{Technologies: Next.js, TypeScript, PostgreSQL, Drizzle ORM, shadcn/ui, Docker, Vercel}
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{Real-Time Multi-Object Tracking System with Computer Vision} \hfill \textit{Jan 2026}
+\begin{itemize}
+    \item Built production-ready object tracking system supporting 6 algorithms (CSRT, KCF, MOSSE, MedianFlow, MIL, Boosting) with automatic YOLO-based detection.
+    \item Implemented Kalman Filter for motion prediction and trajectory smoothing in multi-object scenarios.
+    \item Developed dual interface: Streamlit web UI for ease-of-use and high-performance CLI for production deployments.
+    \item Achieved real-time performance on 1080p video streams with velocity estimation (px/s) and independent trajectory tracking per object.
+    \item Engineered modular architecture with separated controllers, models, and visualization components for maintainability.
+    \item \textit{Technologies: Python, OpenCV, YOLO, Streamlit, Kalman Filters, pytest, MIT Licensed}
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{Advanced Sentiment Analysis System -- Amazon Food Reviews} \hfill \textit{Dec 2025}
+\begin{itemize}
+    \item Developed comprehensive sentiment analysis system comparing 3 approaches: Lexicon-based (Opinion Lexicon, SentiWordNet, Harvard IV-4), ML (Logistic Regression, SVM, Decision Trees with TF-IDF), and Deep Learning (Custom Embeddings).
+    \item Implemented Stacking ensemble method combining multiple ML models for improved accuracy.
+    \item Built custom neural network with trainable word embeddings achieving \textbf{73.1\% accuracy} on Amazon Fine Food Reviews dataset (568k reviews).
+    \item Handled severe class imbalance using SMOTE and stratified sampling techniques.
+    \item Generated comprehensive visualizations (distribution analysis, model comparison, confusion matrices) using matplotlib and seaborn.
+    \item \textit{Technologies: Python, TensorFlow, Keras, Scikit-learn, NLTK, TextBlob, Pandas, SMOTE}
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{NLP Document Vectorization Pipeline -- Racing Lines Corpus} \hfill \textit{Nov 2025}
+\begin{itemize}
+    \item Engineered complete NLP preprocessing pipeline implementing 7 normalization techniques: base preprocessing, lemmatization (spaCy), stemming (NLTK), and POS-tagging combinations.
+    \item Conducted empirical comparison justifying lemmatization as optimal technique for semantic preservation over stemming.
+    \item Implemented 4 vectorization methods on 144-term vocabulary: One-Hot Encoding, Bag-of-Words, Term Probability, and TF-IDF with detailed mathematical explanations.
+    \item Built vocabulary analysis tools with word cloud generation and frequency distribution visualization.
+    \item Demonstrated TF-IDF's superiority for identifying document-characteristic terms (e.g., "optimal" scoring highest in technical doc despite lower frequency).
+    \item \textit{Technologies: Python, spaCy, NLTK, Pandas, Matplotlib, WordCloud, Jupyter}
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{PhotoEscom -- Computer Vision Processing Suite} \hfill \textit{Nov 2025}
+\begin{itemize}
+    \item Developed comprehensive image processing application with edge detection (Canny, Sobel), morphological transformations, and HSV color segmentation.
+    \item Optimized pipeline to process HD images in \textbf{<100ms} (60\% performance improvement over baseline).
+    \item Built interactive GUI with real-time parameter adjustment and instant visual feedback using Tkinter.
+    \item \textit{Technologies: Python, OpenCV, NumPy, Matplotlib, PIL, Tkinter}
+\end{itemize}
+
+\vspace{6pt}
+
+% ============ EDUCATION ============
+\section*{Education}
+
+\textbf{Instituto Politécnico Nacional -- Escuela Superior de Cómputo (ESCOM)} \hfill Aug 2024 -- Jun 2027\\
+B.S. in Artificial Intelligence Engineering \hfill Mexico City, Mexico
+\begin{itemize}
+    \item Relevant Coursework: Machine Learning, Deep Learning, NLP, Computer Vision, Data Structures, Algorithms, Software Engineering
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{Instituto Politécnico Nacional -- CECyT No. 11 "Wilfrido Massieu"} \hfill Aug 2020 -- Jun 2023\\
+Technical Degree in Telecommunications \hfill Mexico City, Mexico
+
+
+% ============ CERTIFICATIONS ============
+\section*{Certifications \& Professional Development}
+
+\begin{itemize}[label=$\bullet$]
+    \item \textbf{English Proficiency Diploma (C1 Level)} -- Harmon Hall (SEP Agreement 18FT135) -- 2025
+    \item \textbf{Oracle Next Education} -- Oracle Academy -- 2025
+    \item \textbf{Python Programming} -- Cisco Networking Academy -- 2024
+\end{itemize}
+
+\end{document}

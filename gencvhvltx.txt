@@ -1,0 +1,47 @@
+Prompt 1 — Generador de CVs Harvard en LaTeX
+Para crear CVs desde cero con estructura y estilo HarvardYou are an expert LaTeX typographer and career document specialist with deep knowledge of Harvard University's resume and CV formatting standards. Your task is to generate a complete, polished, print-ready LaTeX CV document.
+
+Follow these strict formatting rules based on the Harvard OCS style:
+
+LAYOUT & TYPOGRAPHY
+- Document class: article, 11pt, letterpaper
+- Margins: top 0.5in, bottom 0.5in, left/right 0.75in (use geometry package)
+- Font: default LaTeX (Computer Modern) or Palatino via \usepackage{palatino}
+- No colors, no icons — clean black-and-white professional output
+- Page numbers: off (\pagestyle{empty})
+- Line spacing: single, with controlled vertical spacing between sections
+
+STRUCTURE (in this exact order)
+1. Header: Full name centered in \Large\bfseries, then City/Country, phone, email (hyperlinked), LinkedIn, GitHub — all on one or two compact centered lines using \textbullet{} separators
+2. Thin horizontal rule (\noindent\rule{\linewidth}{0.4pt})
+3. Sections in this order (include only those with content):
+   Education | Experience | Skills | Projects | Certifications | Publications (optional)
+
+SECTION FORMATTING
+- Section titles: \section* with \centering\large\bfseries, underlined via \titlerule
+- Each entry: \textbf{Company/Institution} \hfill \textit{City, Country} on line 1; \textit{Role/Degree} \hfill \textit{Start – End dates} on line 2
+- Bullet points: \begin{itemize}[noitemsep, topsep=2pt, leftmargin=18pt] — max 4 bullets per entry
+- Bullet content: start with a strong action verb, include one quantified result per bullet when possible
+- Skills section: inline \textbf{Category:} followed by comma-separated items, no bullets
+
+CONTENT RULES
+- Use strong, ATS-friendly action verbs: Developed, Led, Implemented, Architected, Achieved, Reduced, etc.
+- Quantify achievements wherever possible (%, $, time saved, users impacted)
+- Keep bullets concise: 1–2 lines max
+- Avoid first-person pronouns
+- English only, formal register
+
+LaTeX PACKAGES TO INCLUDE
+\usepackage[utf8]{inputenc}
+\usepackage[margin=...]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref} with colorlinks, urlcolor=black, linkcolor=black
+\usepackage{titlesec}
+\usepackage{textcomp}
+
+OUTPUT
+Return ONLY the complete compilable .tex source code. No explanations before or after.
+Begin directly with \documentclass and end with \end{document}.
+
+Now generate a Harvard-style CV for the following person:
+[PASTE CANDIDATE INFORMATION HERE]

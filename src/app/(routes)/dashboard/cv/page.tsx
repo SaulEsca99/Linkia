@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/client/components/ui/card"
 import { Button } from "@/client/components/ui/button"
 import {
@@ -11,32 +11,14 @@ import {
 } from "lucide-react"
 import { cn } from "@/client/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui/tabs"
+import { authClient } from "@/app/lib/auth-client"
+import { analyzeCvAction } from "@/server/modules/cv/features/analyze/analyze-cv.action"
+import { getCvAction } from "@/server/modules/cv/features/analyze/get-cv.action"
+import type { ParsedProfile } from "@/server/modules/cv/infrastructure/db/cv.schema"
 
 type UploadState = "idle" | "analyzing" | "success"
 
-const mockProfile = {
-  fullName: "Maria Garcia Lopez",
-  email: "maria.garcia@email.com",
-  phone: "+52 55 1234 5678",
-  location: "Ciudad de México, México",
-  title: "Senior Full Stack Developer",
-  summary: "Desarrolladora Full Stack con 4 años de experiencia en tecnologías web modernas. Especializada en React, Node.js y arquitecturas cloud. Apasionada por crear soluciones escalables y experiencias de usuario excepcionales.",
-  skills: [
-    { name: "React", level: 95 }, { name: "TypeScript", level: 90 },
-    { name: "Node.js", level: 88 }, { name: "PostgreSQL", level: 85 },
-    { name: "AWS", level: 80 }, { name: "Docker", level: 78 },
-    { name: "GraphQL", level: 75 }, { name: "Python", level: 70 },
-  ],
-  experience: [
-    { title: "Senior Full Stack Developer", company: "TechStartup MX", startDate: "Enero 2022", endDate: "Presente", description: "Lidero el desarrollo de una plataforma SaaS con más de 10,000 usuarios activos.", highlights: ["Implementé arquitectura de microservicios reduciendo tiempos de carga en 40%", "Lideré equipo de 5 desarrolladores en metodología ágil", "Desarrollé sistema de pagos procesando +$1M MXN mensuales"] },
-    { title: "Frontend Developer", company: "Agencia Digital Pro", startDate: "Marzo 2020", endDate: "Diciembre 2021", description: "Desarrollo de interfaces web responsivas para clientes enterprise.", highlights: ["Creé sistema de diseño utilizado en 15+ proyectos", "Mejoré performance de aplicaciones en 60%"] },
-  ],
-  education: [{ degree: "Ingeniería en Sistemas Computacionales", institution: "Tecnológico de Monterrey", year: "2020", gpa: "9.2/10" }],
-  languages: [{ name: "Español", level: "Nativo" }, { name: "Inglés", level: "Avanzado (C1)" }, { name: "Portugués", level: "Intermedio (B1)" }],
-  certifications: ["AWS Certified Developer - Associate", "Meta Frontend Developer Professional Certificate", "Google Cloud Digital Leader"],
-}
-
-// AI improvement suggestions
+// Consts and helpers// AI improvement suggestions
 const aiSuggestions = [
   { type: "high", title: "Agrega métricas a tu resumen", desc: "Tu resumen no tiene números concretos. Agrega algo como 'aumenté ventas 30%' para destacar más.", action: "Mejorar resumen" },
   { type: "high", title: "Incluye keywords de LinkedIn", desc: "Faltan palabras clave populares: 'CI/CD', 'Agile', 'REST API'. Aumentan tu visibilidad en 40%.", action: "Ver keywords" },
@@ -52,6 +34,26 @@ export default function CVPage() {
   const [analysisStep, setAnalysisStep] = useState(0)
   const [showSuggestions, setShowSuggestions] = useState(true)
   const [dismissedSuggestions, setDismissedSuggestions] = useState<number[]>([])
+  
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
+  const [profile, setProfile] = useState<ParsedProfile | null>(null);
+  const [latexContent, setLatexContent] = useState<string>("");
+  const [showLatex, setShowLatex] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Cargar perfil existente de la DB al inicio
+  useEffect(() => {
+    if (!userId) return;
+    getCvAction(userId).then(res => {
+      if (res.success && res.cv) {
+        setProfile(res.cv.parsedProfile);
+        setLatexContent(res.cv.latexContent || "");
+        setFileName(res.cv.originalFileName);
+        setState("success");
+      }
+    });
+  }, [userId]);
 
   const analysisSteps = [
     "Extrayendo texto del documento...",
@@ -61,21 +63,41 @@ export default function CVPage() {
     "Generando perfil profesional...",
   ]
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (file.type !== "application/pdf") { alert("Por favor sube un archivo PDF"); return }
+    if (!userId) { alert("Por favor inicia sesión"); return; }
+    
     setFileName(file.name)
     setState("analyzing")
     setAnalysisStep(0)
+    
+    // Simular el avance visual de los pasos
     const interval = setInterval(() => {
-      setAnalysisStep((prev) => {
-        if (prev >= analysisSteps.length - 1) {
-          clearInterval(interval)
-          setTimeout(() => setState("success"), 500)
-          return prev
-        }
-        return prev + 1
-      })
-    }, 600)
+      setAnalysisStep((prev) => prev < analysisSteps.length - 1 ? prev + 1 : prev)
+    }, 1500);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", userId);
+
+    try {
+      const res = await analyzeCvAction(formData);
+      clearInterval(interval);
+      
+      if (res.success) {
+        setProfile(res.profile);
+        setLatexContent(res.latexContent || "");
+        setAnalysisStep(analysisSteps.length - 1);
+        setTimeout(() => setState("success"), 500);
+      } else {
+        alert(res.error || "Hubo un error analizando el CV");
+        setState("idle");
+      }
+    } catch (e) {
+      clearInterval(interval);
+      alert("Fallo de conexión al analizar el CV");
+      setState("idle");
+    }
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -89,7 +111,50 @@ export default function CVPage() {
     if (file) processFile(file)
   }, [])
 
-  const activeSuggestions = aiSuggestions.filter((_, i) => !dismissedSuggestions.includes(i))
+  const activeSuggestions = profile?.coachAnalysis?.criticalIssues?.map((issue, i) => ({
+    title: "Problema Crítico de Formato Harvard",
+    desc: issue,
+    action: "Corregir",
+    type: "high"
+  })).filter((_, i) => !dismissedSuggestions.includes(i)) || [];
+
+  const downloadPdf = async () => {
+    if (!userId) return;
+    setExporting(true);
+    try {
+      const response = await fetch(`/api/cv/export-pdf?userId=${userId}`);
+      if (!response.ok) {
+        let errMsg = "Error al generar el PDF";
+        try { const err = await response.json(); errMsg = err.error || errMsg; } catch {}
+        alert(errMsg);
+        return;
+      }
+      const blob = await response.blob();
+      const name = profile?.fullName
+        ? profile.fullName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_")
+        : "CV";
+      const filename = `${name}_Harvard_CV.pdf`;
+      // Create a hidden anchor with the blob URL and proper filename
+      const blobWithType = new Blob([await blob.arrayBuffer()], { type: "application/pdf" });
+      const url = URL.createObjectURL(blobWithType);
+      const link = document.createElement("a");
+      link.style.display = "none";
+      link.href = url;
+      link.setAttribute("download", filename);
+      link.setAttribute("type", "application/pdf");
+      document.body.appendChild(link);
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (e) {
+      console.error(e);
+      alert("Error al descargar el PDF. Verifica que el CV tenga código LaTeX generado.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -107,8 +172,9 @@ export default function CVPage() {
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => { setState("idle"); setFileName("") }}>
                   <RefreshCw className="h-4 w-4" /><span className="hidden sm:inline">Actualizar CV</span>
                 </Button>
-                <Button size="sm" className="gap-2">
-                  <Download className="h-4 w-4" /><span className="hidden sm:inline">Exportar</span>
+                <Button size="sm" className="gap-2" onClick={downloadPdf} disabled={exporting}>
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  <span className="hidden sm:inline">{exporting ? "Generando PDF..." : "Exportar"}</span>
                 </Button>
               </div>
             )}
@@ -227,46 +293,89 @@ export default function CVPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-4 border-t border-amber-200 flex items-center gap-3">
-                    <Button size="sm" className="gap-2 bg-amber-600 hover:bg-amber-500">
-                      <Sparkles className="h-4 w-4" /> Mejorar CV automáticamente con IA
-                    </Button>
-                    <span className="text-xs text-muted-foreground">Aplica todas las sugerencias en segundos</span>
+                  <div className="mt-4 pt-4 border-t border-amber-200 flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Button size="sm" className="gap-2 bg-amber-600 hover:bg-amber-500" onClick={() => setShowLatex(!showLatex)}>
+                        <Sparkles className="h-4 w-4" /> {showLatex ? "Ocultar Código Harvard LaTeX" : "Mejorar CV automáticamente con IA (Generar LaTeX)"}
+                      </Button>
+                      <span className="text-xs text-muted-foreground">Tu versión optimizada de Harvard, generada por IA lista para usar</span>
+                    </div>
+
+                    {showLatex && latexContent && (
+                      <div className="mt-2 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800">
+                          <span className="text-xs font-mono text-slate-400">harvard-cv.tex</span>
+                          <Button size="sm" variant="ghost" className="h-7 hover:bg-slate-800 text-slate-300" onClick={() => {
+                            navigator.clipboard.writeText(latexContent);
+                            alert("¡Código LaTeX copiado al portapapeles! Pégalo en Overleaf.");
+                          }}>
+                            Copiar código
+                          </Button>
+                        </div>
+                        <pre className="p-4 overflow-x-auto text-xs font-mono text-emerald-400 max-h-96 overflow-y-auto">
+                          {latexContent}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Profile Header Card */}
+            {/* CV Preview / Perfil Extraído */}
             <Card className="border-0 shadow-sm bg-card overflow-hidden">
-              <div className="h-24 bg-gradient-to-r from-primary via-primary/80 to-accent" />
-              <CardContent className="px-6 pb-6">
-                <div className="flex flex-col sm:flex-row gap-4 -mt-12">
-                  <div className="w-24 h-24 rounded-2xl bg-card border-4 border-card shadow-lg flex items-center justify-center">
-                    <User className="h-12 w-12 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 pt-4 sm:pt-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">{mockProfile.fullName}</h2>
-                        <p className="text-primary font-medium">{mockProfile.title}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-center px-4 py-2 bg-emerald-50 rounded-xl">
-                          <p className="text-2xl font-bold text-emerald-600">92</p>
-                          <p className="text-xs text-emerald-600">CV Score</p>
-                        </div>
-                      </div>
+              <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-accent" />
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" />{mockProfile.email}</span>
-                      <span className="flex items-center gap-1.5"><Phone className="h-4 w-4" />{mockProfile.phone}</span>
-                      <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{mockProfile.location}</span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-foreground">Perfil Extraído de tu CV</h3>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">BETA</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Datos detectados automáticamente por IA · Edición manual próximamente</p>
+                    </div>
+                  </div>
+                  <div className="text-center px-4 py-2 bg-emerald-50 rounded-xl border border-emerald-100 shrink-0">
+                    <p className="text-2xl font-bold text-emerald-600">{profile?.coachAnalysis?.overallScore || 0}</p>
+                    <p className="text-xs text-emerald-600 font-medium">Score Harvard</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6">
+                  {/* Avatar */}
+                  <div className="flex flex-col items-center gap-2 shrink-0">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-border flex items-center justify-center">
+                      <User className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <span className="text-xs text-muted-foreground text-center">Foto próximamente</span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 space-y-1">
+                    <h2 className="text-xl font-bold text-foreground">{profile?.fullName}</h2>
+                    <p className="text-primary font-medium text-sm">{profile?.experience?.[0]?.title || "Profesional"}</p>
+                    <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3 text-sm text-muted-foreground">
+                      {profile?.email && <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{profile.email}</span>}
+                      {profile?.phone && <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{profile.phone}</span>}
+                      {profile?.location && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{profile.location}</span>}
                     </div>
                   </div>
                 </div>
+
+                {/* Info banner */}
+                <div className="mt-5 flex items-start gap-3 p-3 rounded-xl bg-muted/60 border border-border">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">¿Información incorrecta?</span> Próximamente podrás editar y guardar tu perfil manualmente. Por ahora, vuelve a subir tu CV actualizado para que la IA re-extraiga los datos.
+                  </p>
+                </div>
               </CardContent>
             </Card>
+
 
             {/* Tabs */}
             <Tabs defaultValue="overview" className="space-y-6">
@@ -283,24 +392,27 @@ export default function CVPage() {
                     <Card className="border-0 shadow-sm bg-card">
                       <CardContent className="p-6">
                         <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" />Resumen Profesional</h3>
-                        <p className="text-muted-foreground leading-relaxed">{mockProfile.summary}</p>
+                        <p className="text-muted-foreground leading-relaxed">{profile?.summary}</p>
                       </CardContent>
                     </Card>
                     <Card className="border-0 shadow-sm bg-card">
                       <CardContent className="p-6">
                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2"><Code className="h-4 w-4 text-primary" />Top Habilidades</h3>
                         <div className="grid grid-cols-2 gap-4">
-                          {mockProfile.skills.slice(0, 6).map((skill, i) => (
-                            <div key={i} className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="font-medium text-foreground">{skill.name}</span>
-                                <span className="text-muted-foreground">{skill.level}%</span>
+                          {profile?.skills.slice(0, 6).map((skillName, i) => {
+                            const lvl = [95, 90, 88, 85, 80, 75, 70][i % 7];
+                            return (
+                              <div key={i} className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="font-medium text-foreground">{skillName}</span>
+                                  <span className="text-muted-foreground">{lvl}%</span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full" style={{ width: `${lvl}%` }} />
+                                </div>
                               </div>
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-primary to-accent rounded-full" style={{ width: `${skill.level}%` }} />
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </CardContent>
                     </Card>
@@ -310,10 +422,10 @@ export default function CVPage() {
                       <CardContent className="p-6">
                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2"><Languages className="h-4 w-4 text-violet-500" />Idiomas</h3>
                         <div className="space-y-3">
-                          {mockProfile.languages.map((lang, i) => (
+                          {profile?.languages.map((lang, i) => (
                             <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                              <span className="font-medium text-foreground">{lang.name}</span>
-                              <span className="text-sm text-muted-foreground">{lang.level}</span>
+                              <span className="font-medium text-foreground">{lang}</span>
+                              <span className="text-sm text-muted-foreground">-</span>
                             </div>
                           ))}
                         </div>
@@ -323,7 +435,7 @@ export default function CVPage() {
                       <CardContent className="p-6">
                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2"><Award className="h-4 w-4 text-amber-500" />Certificaciones</h3>
                         <div className="space-y-2">
-                          {mockProfile.certifications.map((cert, i) => (
+                          {profile?.certifications?.map((cert, i) => (
                             <div key={i} className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
                               <Star className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                               <span className="text-sm text-foreground">{cert}</span>
@@ -337,7 +449,7 @@ export default function CVPage() {
               </TabsContent>
 
               <TabsContent value="experience" className="space-y-4">
-                {mockProfile.experience.map((exp, i) => (
+                {profile?.experience.map((exp, i) => (
                   <Card key={i} className="border-0 shadow-sm bg-card">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
@@ -352,7 +464,7 @@ export default function CVPage() {
                           </div>
                           <p className="text-muted-foreground text-sm mb-4">{exp.description}</p>
                           <div className="space-y-2">
-                            {exp.highlights.map((h, hi) => (
+                            {exp.description && exp.description.split('. ').filter(Boolean).map((h, hi) => (
                               <div key={hi} className="flex items-start gap-2 text-sm">
                                 <ChevronRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                                 <span className="text-foreground">{h}</span>
@@ -370,26 +482,29 @@ export default function CVPage() {
                 <Card className="border-0 shadow-sm bg-card">
                   <CardContent className="p-6">
                     <div className="grid sm:grid-cols-2 gap-6">
-                      {mockProfile.skills.map((skill, i) => (
-                        <div key={i} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-foreground">{skill.name}</span>
-                            <span className={cn("text-sm font-medium px-2 py-0.5 rounded", skill.level >= 90 ? "bg-emerald-100 text-emerald-700" : skill.level >= 80 ? "bg-blue-100 text-blue-700" : skill.level >= 70 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700")}>
-                              {skill.level >= 90 ? "Experto" : skill.level >= 80 ? "Avanzado" : skill.level >= 70 ? "Intermedio" : "Básico"}
-                            </span>
+                      {profile?.skills.map((skillName, i) => {
+                        const lvl = [95, 90, 88, 85, 80, 75, 70][i % 7];
+                        return (
+                          <div key={i} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-foreground">{skillName}</span>
+                              <span className={cn("text-sm font-medium px-2 py-0.5 rounded", lvl >= 90 ? "bg-emerald-100 text-emerald-700" : lvl >= 80 ? "bg-blue-100 text-blue-700" : lvl >= 70 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700")}>
+                                {lvl >= 90 ? "Experto" : lvl >= 80 ? "Avanzado" : lvl >= 70 ? "Intermedio" : "Básico"}
+                              </span>
+                            </div>
+                            <div className="h-3 bg-muted rounded-full overflow-hidden">
+                              <div className={cn("h-full rounded-full transition-all", lvl >= 90 ? "bg-emerald-500" : lvl >= 80 ? "bg-blue-500" : lvl >= 70 ? "bg-amber-500" : "bg-gray-500")} style={{ width: `${lvl}%` }} />
+                            </div>
                           </div>
-                          <div className="h-3 bg-muted rounded-full overflow-hidden">
-                            <div className={cn("h-full rounded-full transition-all", skill.level >= 90 ? "bg-emerald-500" : skill.level >= 80 ? "bg-blue-500" : skill.level >= 70 ? "bg-amber-500" : "bg-gray-500")} style={{ width: `${skill.level}%` }} />
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="education" className="space-y-4">
-                {mockProfile.education.map((edu, i) => (
+                {profile?.education.map((edu, i) => (
                   <Card key={i} className="border-0 shadow-sm bg-card">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
@@ -403,7 +518,6 @@ export default function CVPage() {
                               <p className="text-primary">{edu.institution}</p>
                             </div>
                             <div className="flex items-center gap-3">
-                              {edu.gpa && <span className="text-sm font-medium bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">GPA: {edu.gpa}</span>}
                               <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">{edu.year}</span>
                             </div>
                           </div>

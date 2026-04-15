@@ -17,6 +17,8 @@ import {
   Bell,
 } from "lucide-react"
 import { Button } from "@/client/components/ui/button"
+import { useRouter } from "next/navigation"
+import { authClient } from "@/app/lib/auth-client"
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Inicio", description: "Vista general" },
@@ -27,6 +29,19 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
+  const user = session?.user
+
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/sign-in")
+        }
+      }
+    })
+  }
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-72 border-r border-border bg-card hidden lg:flex flex-col">
@@ -47,12 +62,16 @@ export function Sidebar() {
       <div className="px-4 py-4 border-b border-border">
         <Link href="/dashboard/configuracion">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm shrink-0">
-              U
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm shrink-0 uppercase">
+              {user ? user.name.substring(0, 2) : "U"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Mi cuenta</p>
-              <p className="text-xs text-muted-foreground truncate">Configurar perfil →</p>
+              <p className="text-sm font-medium text-foreground truncate">
+                {user ? user.name : "Mi cuenta"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user ? user.email : "Configurar perfil →"}
+              </p>
             </div>
           </div>
         </Link>
@@ -152,13 +171,13 @@ export function Sidebar() {
           <HelpCircle className="h-5 w-5" />
           Ayuda
         </Link>
-        <Link
-          href="/sign-in"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
         >
           <LogOut className="h-5 w-5" />
           Cerrar sesión
-        </Link>
+        </button>
       </div>
     </aside>
   )

@@ -1,14 +1,14 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: jobai-db
+    container_name: linkia-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: jobai
+      POSTGRES_USER: linkia
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: JOBAI-DB
+      POSTGRES_DB: linkia-db
     volumes:
       - postgres-data:/var/lib/postgresql/data
 

@@ -8,20 +8,33 @@ import { Input } from "@/client/components/ui/input"
 import { ArrowRight, Sparkles, TrendingUp, Users, CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { authClient } from "@/app/lib/auth-client"
+
 export default function SignInPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [errorMsg, setErrorMsg] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simulate auth — replace with Better Auth call
-    await new Promise(r => setTimeout(r, 1000))
-    setIsLoading(false)
-    router.push("/dashboard")
+    setErrorMsg("")
+    
+    await authClient.signIn.email({
+      email,
+      password,
+    }, {
+      onSuccess: () => {
+        router.push("/dashboard")
+      },
+      onError: (ctx) => {
+        setErrorMsg(ctx.error.message || "Usuario o contraseña incorrectos")
+        setIsLoading(false)
+      }
+    })
   }
 
   return (
@@ -194,6 +207,12 @@ export default function SignInPage() {
                   </button>
                 </div>
               </div>
+
+              {errorMsg && (
+                <div className="p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-lg">
+                  {errorMsg}
+                </div>
+              )}
 
               <Button type="submit" className="w-full h-12 text-base font-medium gap-2" disabled={isLoading}>
                 {isLoading ? (

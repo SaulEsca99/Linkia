@@ -1,6 +1,8 @@
 import { db } from "@server/db";
 import { cvs } from "@server/modules/cv/infrastructure/db/cv.schema";
 import { analyzeCV } from "./openai-analyzer";
+import { generateLatexFromProfile } from "./generate-latex";
+import { refreshJobsCache } from "@server/modules/jobs/jobs-cache.service";
 import type { CvAnalysisResult } from "@server/modules/cv/domain/cv.types";
 
 type AnalyzeCvInput = {
@@ -20,8 +22,9 @@ export async function analyzeCvUseCase(
   input: AnalyzeCvInput
 ): Promise<CvAnalysisResult> {
   try {
-    // 1. Analizar con OpenAI
+    // 1. Analizar con OpenAI y Generar LaTeX
     const profile = await analyzeCV(input.rawText);
+    const latexContent = await generateLatexFromProfile(profile);
 
     // 2. Guardar en DB
     await db.insert(cvs).values({
@@ -30,11 +33,22 @@ export async function analyzeCvUseCase(
       originalText: input.rawText,
       blobUrl: input.blobUrl ?? null,
       parsedProfile: profile,
+      latexContent: latexContent,
     });
+
+    // 3. Disparar búsqueda de empleos en background basada en el perfil del CV
+    const skills = profile.skills ?? [];
+    const title = profile.experience?.[0]?.title ?? "";
+    const smartQuery = [title, ...skills.slice(0, 3)].filter(Boolean).join(" ") || "desarrollador software mexico";
+    // Fire and forget — no bloquea la respuesta al usuario
+    refreshJobsCache(input.userId, smartQuery, skills, false).catch(err =>
+      console.error("[analyzeCvUseCase] Job cache refresh failed:", err)
+    );
 
     return {
       success: true,
       profile,
+      latexContent,
       rawText: input.rawText,
     };
   } catch (error) {
