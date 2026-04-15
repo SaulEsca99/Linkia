@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { title, skills } = await extractSkillsFromText(text);
-    const smartQuery = [title, ...skills.slice(0, 3)].filter(Boolean).join(" ") || "software developer mexico";
-    const jobs = await refreshJobsCache(userId, smartQuery, skills, true);
+    const jobs = await refreshJobsCache(userId, title, skills, title, true);
 
     return NextResponse.json({
       success: true,
@@ -102,8 +101,9 @@ export async function GET(request: NextRequest) {
   try {
     const userCv = await db.select().from(cvs).where(eq(cvs.userId, userId)).orderBy(desc(cvs.createdAt)).limit(1);
     const skills = userCv[0]?.parsedProfile?.skills ?? [];
+    const title = userCv[0]?.parsedProfile?.experience?.[0]?.title ?? "";
 
-    const { jobs, status, fromCache } = await getCachedJobs(userId, skills);
+    const { jobs, status, fromCache } = await getCachedJobs(userId, skills, title);
     return NextResponse.json({
       success: true,
       jobs,
@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
       hasPreviousCV: skills.length > 0,
       detectedSkills: skills,
     });
+
   } catch (error) {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }

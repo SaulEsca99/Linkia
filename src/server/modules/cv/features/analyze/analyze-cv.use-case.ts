@@ -39,9 +39,8 @@ export async function analyzeCvUseCase(
     // 3. Disparar búsqueda de empleos en background basada en el perfil del CV
     const skills = profile.skills ?? [];
     const title = profile.experience?.[0]?.title ?? "";
-    const smartQuery = [title, ...skills.slice(0, 3)].filter(Boolean).join(" ") || "desarrollador software mexico";
     // Fire and forget — no bloquea la respuesta al usuario
-    refreshJobsCache(input.userId, smartQuery, skills, false).catch(err =>
+    refreshJobsCache(input.userId, "", skills, title, false).catch(err =>
       console.error("[analyzeCvUseCase] Job cache refresh failed:", err)
     );
 

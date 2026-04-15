@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         }, { status: 429 });
       }
 
-      const jobs = await refreshJobsCache(userId, searchQuery, profileSkills, true);
+      const jobs = await refreshJobsCache(userId, searchQuery, profileSkills, "", true);
       const newRecords = await db.select().from(jobsCache).where(eq(jobsCache.userId, userId)).limit(1);
       const newStatus = getCacheStatus(newRecords[0] ?? null);
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Normal load: serve from cache (auto-refreshes if stale)
-    const { jobs, status, fromCache } = await getCachedJobs(userId, profileSkills);
+    const { jobs, status, fromCache } = await getCachedJobs(userId, profileSkills, "");
 
     return NextResponse.json({
       success: true,

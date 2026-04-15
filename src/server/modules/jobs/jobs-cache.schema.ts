@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, jsonb, integer, boolean } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
 import { user } from "@server/modules/identity/infrastructure/db/auth.schema";
 import type { JobListing } from "@server/modules/jobs/jobs.service";
@@ -27,6 +27,7 @@ export const jobsCache = pgTable("jobs_cache", {
   refreshCount: integer("refresh_count").notNull().default(0), // Resets daily
   lastRefreshAt: timestamp("last_refresh_at"),
   dailyResetAt: timestamp("daily_reset_at"), // When refreshCount was last reset to 0
+  lastSearchFailed: boolean("last_search_failed").notNull().default(false), // evita re-fetch loop
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdateFn(() => new Date()),
