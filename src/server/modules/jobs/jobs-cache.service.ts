@@ -40,25 +40,49 @@ const HIGH_VALUE_TERMS = new Set([
   "sap", "salesforce", "servicenow", "jira",
 ]);
 
+// Acortar una skill para usarla en un query de búsqueda
+// "Oracle (Procedures, Triggers, Tablas, Vistas, Secuencias)" → "Oracle"
+// "Linux (Suse Linux Server Enterprise 11)" → "Linux"
+function sanitizeSkill(skill: string): string {
+  return skill
+    .replace(/\(.*\)/g, "")        // elimina paréntesis y su contenido
+    .replace(/[^a-zA-Z0-9+#. ]/g, " ") // elimina caracteres especiales
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)                   // máx 2 palabras
+    .join(" ")
+    .toLowerCase();
+}
+
 function buildSmartQuery(searchQuery: string, profileSkills: string[], profileTitle: string): string {
   if (searchQuery) return searchQuery;
 
-  // 1. Palabras clave de alta demanda que tenga el usuario
-  const highValue = profileSkills.filter(s =>
-    HIGH_VALUE_TERMS.has(s.toLowerCase()) ||
-    [...HIGH_VALUE_TERMS].some(t => s.toLowerCase().includes(t))
+  // Sanitizar todas las skills primero
+  const sanitized = profileSkills.map(sanitizeSkill).filter(s => s.length >= 2 && s.length <= 20);
+
+  // 1. Skills de alta demanda (las más buscadas en portales)
+  const highValue = sanitized.filter(s =>
+    HIGH_VALUE_TERMS.has(s) || [...HIGH_VALUE_TERMS].some(t => s.includes(t) || t.includes(s))
   );
 
-  // 2. Skills sin términos bloqueados
-  const cleanSkills = profileSkills.filter(s =>
-    !BLOCKED_QUERY_TERMS.has(s.toLowerCase()) &&
-    s.length > 2 && s.length < 30
-  );
+  // 2. Skills limpias sin términos bloqueados
+  const clean = sanitized.filter(s => !BLOCKED_QUERY_TERMS.has(s));
 
-  // 3. Tomar las mejores 3 palabras para el query
-  const queryTerms = highValue.length >= 1
-    ? [profileTitle || "", ...highValue.slice(0, 2)].filter(Boolean)
-    : [profileTitle || "", ...cleanSkills.slice(0, 2)].filter(Boolean);
+  // 3. Limpiar el título (solo primeras 3 palabras)
+  const cleanTitle = profileTitle.split(" ").slice(0, 3).join(" ").trim();
+
+  let queryTerms: string[];
+
+  if (highValue.length >= 2) {
+    // Tenemos skills de alta demanda — úsalas directamente
+    queryTerms = highValue.slice(0, 3);
+  } else if (highValue.length === 1) {
+    // Solo 1 skill de alta demanda — complementar con título
+    queryTerms = [cleanTitle, ...highValue].filter(Boolean).slice(0, 2);
+  } else {
+    // Sin skills de alta demanda — usar título + skills limpias
+    queryTerms = [cleanTitle, ...clean.slice(0, 2)].filter(Boolean);
+  }
 
   const query = queryTerms.join(" ").trim();
   return query || "desarrollador software mexico";
@@ -119,14 +143,20 @@ export async function getCachedJobs(
 
   const cachedList = (record.jobs as JobListing[]);
 
-  // Si el caché tiene jobs[] pero la última búsqueda ya falló → NO re-intentar automáticamente
-  // El usuario debe iniciar una búsqueda manual
-  if (cachedList.length === 0 && record.lastSearchFailed) {
-    return { jobs: [], status, fromCache: true };
-  }
-
-  // Si jobs[] está vacío y la búsqueda NO falló antes → re-intentar UNA vez
+  // Si el caché tiene jobs[] vacío:
+  // - Si fue actualizado hace menos de 30 min → ya se intentó, no re-intentar (evita loop)
+  // - Si fue actualizado hace más de 30 min → re-intentar UNA vez con mejor query
   if (cachedList.length === 0) {
+    const lastUpdated = record.lastRefreshAt ?? record.createdAt;
+    const minsSinceUpdate = (Date.now() - lastUpdated.getTime()) / (1000 * 60);
+
+    if (minsSinceUpdate < 30) {
+      // Busqueda reciente fallida — no re-intentar, mostrar estado searchFailed
+      const failedStatus = { ...status, searchFailed: true };
+      return { jobs: [], status: failedStatus, fromCache: true };
+    }
+
+    // Más de 30 min desde el último intento — re-intentar con nuevo query
     const freshJobs = await refreshJobsCache(userId, "", profileSkills, profileTitle, false);
     const newRecords = await db.select().from(jobsCache).where(eq(jobsCache.userId, userId)).limit(1);
     return { jobs: freshJobs, status: getCacheStatus(newRecords[0] ?? null), fromCache: false };

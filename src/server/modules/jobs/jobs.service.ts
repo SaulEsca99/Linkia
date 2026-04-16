@@ -15,7 +15,7 @@ export interface JobListing {
   description: string;
   tags: string[]; // skills / keywords
   url: string;
-  source: "JSearch" | "Adzuna" | "RemoteOK";
+  source: "JSearch" | "Adzuna" | "RemoteOK" | "OCC" | "Computrabajo";
   postedAt: string;
   logo?: string;
 }
@@ -175,22 +175,52 @@ export function calculateMatch(jobTags: string[], profileSkills: string[]): numb
   return Math.round(60 + (score / 100) * 38);
 }
 
-// ─── Función principal: agrega todas las fuentes ──────────────────────────
+// ─── Función principal: agrega todas las fuentes ──────────────────────
 export async function fetchJobs(query: string, profileSkills: string[] = []): Promise<JobListing[]> {
+  // Importación dinámica del scraper para evitar bundle en cliente
+  const { scrapeJobs } = await import("./jobs-scraper.service");
+
+  // Extraer keywords del query para el scraper
+  const scraperKeywords = query
+    .split(" ")
+    .filter(w => w.length > 2 && !/^(de|en|y|con|para|mexico|latam|remoto)$/i.test(w))
+    .slice(0, 4);
+
   // Fetch all sources in parallel
-  const [jsearchJobs, adzunaJobs, remoteOKJobs] = await Promise.allSettled([
+  const [jsearchJobs, adzunaJobs, remoteOKJobs, scraperResult] = await Promise.allSettled([
     fetchJSearch(query),
     fetchAdzuna(query),
     fetchRemoteOK(profileSkills.slice(0, 3)),
+    scrapeJobs({ keywords: scraperKeywords.length > 0 ? scraperKeywords : [query], ubicacion: "Mexico" }),
   ]);
+
+  // Normalizar ScrapedJob → JobListing
+  function normalizeScraped(result: typeof scraperResult): JobListing[] {
+    if (result.status !== "fulfilled") return [];
+    return result.value.jobs.map(j => ({
+      id: j.id,
+      title: j.title,
+      company: j.company,
+      location: j.location,
+      type: j.type,
+      salary: j.salary,
+      description: j.description,
+      tags: j.tags,
+      url: j.url,
+      source: j.source as "OCC" | "Computrabajo",
+      postedAt: j.scrapedAt.toISOString(),
+      logo: undefined,
+    }));
+  }
 
   const all: JobListing[] = [
     ...(jsearchJobs.status === "fulfilled" ? jsearchJobs.value : []),
     ...(adzunaJobs.status === "fulfilled" ? adzunaJobs.value : []),
     ...(remoteOKJobs.status === "fulfilled" ? remoteOKJobs.value : []),
+    ...normalizeScraped(scraperResult),
   ];
 
-  // Deduplicate by title+company
+  // Deduplicar por título+empresa
   const seen = new Set<string>();
   return all.filter(job => {
     const key = `${job.title.toLowerCase()}-${job.company.toLowerCase()}`;

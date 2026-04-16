@@ -19,9 +19,11 @@ type JobWithMatch = JobListing & { match: number };
 const JOB_TYPES = ["Todos", "Tiempo completo", "Medio tiempo", "Becario", "Remoto"]
 
 const SOURCE_BADGES: Record<string, { label: string; color: string }> = {
-  JSearch:  { label: "LinkedIn/Indeed", color: "bg-blue-100 text-blue-700" },
-  Adzuna:   { label: "Adzuna MX",       color: "bg-violet-100 text-violet-700" },
-  RemoteOK: { label: "RemoteOK",        color: "bg-emerald-100 text-emerald-700" },
+  JSearch:       { label: "LinkedIn/Indeed",  color: "bg-blue-100 text-blue-700" },
+  Adzuna:        { label: "Adzuna MX",        color: "bg-violet-100 text-violet-700" },
+  RemoteOK:      { label: "RemoteOK",         color: "bg-emerald-100 text-emerald-700" },
+  OCC:           { label: "OCC Mundial",       color: "bg-red-100 text-red-700" },
+  Computrabajo:  { label: "Computrabajo",     color: "bg-orange-100 text-orange-700" },
 }
 
 function formatTimeAgo(date?: Date | string): string {
